@@ -5,11 +5,12 @@
   <img src="https://img.shields.io/badge/ex--miHoYo-Genshin%20Impact-1455B4?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/ex--Tencent%20TiMi-Call%20of%20Duty-000000?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/ex--Riot%20Games-League%20of%20Legends-D13639?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/NTU%20Singapore-003D7C?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/NTU%20Singapore-MSc%20Economics-003D7C?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Shandong%20University-Japanese%20%26%20Finance-880000?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Landscape%20Photography-3A77D4?style=for-the-badge&logo=adobelightroom&logoColor=white"/>
 </p>
 
-AI Product Manager with roots in game design. Previously shipped *Genshin Impact* @ miHoYo, worked on *Call of Duty* @ Tencent TiMi Studio, and interned on *League of Legends* @ Riot Games. NTU Singapore graduate.
+AI Product Manager with roots in game design. Previously shipped *Genshin Impact* @ miHoYo, worked on *Call of Duty* @ Tencent TiMi Studio, and interned on *League of Legends* @ Riot Games. Educated at Shandong University (Japanese & Finance) before MSc Economics @ NTU Singapore.
 
 Off-screen, landscape photography is the long-term side practice.
 
