@@ -16,7 +16,7 @@ Off-screen, landscape photography is the long-term side practice.
 
 ### Find me elsewhere
 
-<a href="#" target="_blank"><img src="https://img.shields.io/badge/小红书-雲月Ungetsu-FF2442?style=for-the-badge&logo=xiaohongshu&logoColor=white"/></a>
-<a href="#" target="_blank"><img src="https://img.shields.io/badge/微信公众号-倦默轩-07C160?style=for-the-badge&logo=wechat&logoColor=white"/></a>
+<a href="https://xhslink.com/m/2d8lG5ZU6mX" target="_blank"><img src="https://img.shields.io/badge/小红书-雲月Ungetsu-FF2442?style=for-the-badge&logo=xiaohongshu&logoColor=white"/></a>
+<a href="./wechat-qr.png" target="_blank"><img src="https://img.shields.io/badge/微信公众号-倦默轩-07C160?style=for-the-badge&logo=wechat&logoColor=white"/></a>
 <a href="#" target="_blank"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white"/></a>
-<a href="#" target="_blank"><img src="https://img.shields.io/badge/知乎-三不开居士-0084FF?style=for-the-badge&logo=zhihu&logoColor=white"/></a>
+<a href="https://www.zhihu.com/people/jian-gui-11-62" target="_blank"><img src="https://img.shields.io/badge/知乎-三不开居士-0084FF?style=for-the-badge&logo=zhihu&logoColor=white"/></a>
