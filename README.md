@@ -14,6 +14,17 @@ AI Product Manager with roots in game design. Previously shipped *Genshin Impact
 
 Off-screen, landscape photography is the long-term side practice.
 
+### 🔬 Independent research
+
+Amateur experimental mathematics, done in the open — every project ships its
+code, data, and paper source in one reproducible repository.
+
+| Project | Status | Highlights |
+|---|---|---|
+| [lemoine-conjecture](https://github.com/YunyueLi/lemoine-conjecture) | preprint draft | Exhaustive verification of Lemoine's conjecture to 2×10¹³ (no counterexample); new OEIS A002091 term a(50); Riemann-zero oscillations detected in the representation function |
+
+*Projects are human-directed, AI-assisted (Claude), and fully disclosed as such.*
+
 ### Find me elsewhere
 
 <a href="https://xhslink.com/m/2d8lG5ZU6mX" target="_blank"><img src="https://img.shields.io/badge/小红书-雲月Ungetsu-FF2442?style=for-the-badge&logo=xiaohongshu&logoColor=white"/></a>
