@@ -3,14 +3,11 @@
   <img src="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/banner-light.jpg" alt="雲月 Ungetsu" width="100%"/>
 </picture>
 
-<p>
-  <img src="https://img.shields.io/badge/AI%20Product%20Manager-8A2BE2?style=flat-square&labelColor=8A2BE2" alt="AI Product Manager"/>
-  <img src="https://img.shields.io/badge/ex--miHoYo-Genshin%20Impact-1455B4?style=flat-square&labelColor=1455B4" alt="ex-miHoYo Genshin Impact"/>
-  <img src="https://img.shields.io/badge/ex--Tencent%20TiMi-Call%20of%20Duty-000000?style=flat-square&labelColor=000000" alt="ex-Tencent TiMi Call of Duty"/>
-  <img src="https://img.shields.io/badge/ex--Riot%20Games-League%20of%20Legends-D13639?style=flat-square&labelColor=D13639" alt="ex-Riot Games League of Legends"/>
-  <img src="https://img.shields.io/badge/NTU%20Singapore-MSc%20Economics-003D7C?style=flat-square&labelColor=003D7C" alt="NTU Singapore MSc Economics"/>
-  <img src="https://img.shields.io/badge/Shandong%20University-Japanese%20%26%20Finance-880000?style=flat-square&labelColor=880000" alt="Shandong University Japanese & Finance"/>
-  <img src="https://img.shields.io/badge/Landscape%20Photography-3A77D4?style=flat-square&labelColor=3A77D4" alt="Landscape Photography"/>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/typing-dark.svg">
+    <img src="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/typing-light.svg" alt="AI Product Manager; Genshin Impact at miHoYo; Call of Duty at Tencent TiMi; League of Legends at Riot Games" width="760"/>
+  </picture>
 </p>
 
 AI Product Manager with roots in game design. Previously shipped *Genshin Impact* @ miHoYo, worked on *Call of Duty* @ Tencent TiMi Studio, and interned on *League of Legends* @ Riot Games. Educated at Shandong University (Japanese & Finance) before MSc Economics @ NTU Singapore.
