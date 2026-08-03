@@ -1,8 +1,6 @@
-## 👋 Hi! I'm UNGETSU 雲月
-
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/strip-dark.svg">
-  <img src="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/strip-light.svg" alt="Now: AI Product Manager. Previously: Genshin Impact at miHoYo, Call of Duty at Tencent TiMi, League of Legends at Riot Games. Education: MSc Economics at NTU Singapore, Japanese and Finance at Shandong University. Also: landscape photography." width="575"/>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/banner-dark.jpg">
+  <img src="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/banner-light.jpg" alt="雲月 Ungetsu" width="100%"/>
 </picture>
 
 AI Product Manager with roots in game design. Previously shipped *Genshin Impact* @ miHoYo, worked on *Call of Duty* @ Tencent TiMi Studio, and interned on *League of Legends* @ Riot Games. Educated at Shandong University (Japanese & Finance) before MSc Economics @ NTU Singapore.
