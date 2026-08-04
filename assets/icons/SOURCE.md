@@ -9,6 +9,7 @@ Four marks vendored from [simple-icons](https://github.com/simple-icons/simple-i
 | wechat.svg | wechat | WeChat |
 | linkedin.svg | linkedin | LinkedIn |
 | zhihu.svg | zhihu | Zhihu |
+| x.svg | x | X |
 
 Vendored rather than fetched at build time so `build-social.py` runs offline and
 the row cannot change under us. Each is a single path on a 24x24 viewBox, which

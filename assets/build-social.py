@@ -46,6 +46,11 @@ PLATFORMS = [
     ("wechat",   "微信公众号",  "倦默轩",      "#07C160", "#3DD98A", "wechat",      "glyph"),
     ("linkedin", "LinkedIn",   "ungetsu",     "#0A66C2", "#4C9BE8", "linkedin",    "knockout"),
     ("zhihu",    "知乎",        "三不开居士",   "#0084FF", "#3DA5FF", "zhihu",       "knockout"),
+    # X's brand is monochrome. Pure black is right on the light canvas but
+    # vanishes into #0d1117, so the dark plate lifts to a neutral charcoal
+    # rather than inverting to a light plate, which would make X the only pale
+    # chip in the row.
+    ("x",        "X",          "ungetsucaspian", "#000000", "#3F3F46", "x",        "glyph"),
 ]
 
 THEMES = {
