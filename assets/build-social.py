@@ -28,8 +28,10 @@ import math
 import os
 import re
 from fontTools.misc.transform import Transform
+from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
+from fontTools.svgLib.path import parse_path
 from fontTools.ttLib import TTCollection
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -67,6 +69,13 @@ GAP = 7          # between name and handle
 PAD, ICON, ICON_VB = 11, 14, 24    # icons are single paths on a 24x24 box
 PLATE_RX = 5                       # corner radius of the brand plate, in icon units
 MARK = "#FFFFFF"                   # every mark sits white on its own plate
+# simple-icons draws every mark to fill its whole 24x24 box, with no padding,
+# because the mark is meant to BE the icon. Put one on a plate of the same size
+# and it runs into the rounded corners: Xiaohongshu's letterforms touched the
+# left edge and X's strokes reached all four corners, quartering the plate. The
+# glyph shapes get scaled to this fraction of the plate and centred on their own
+# measured bounds. Knockout marks already carry a correctly proportioned plate.
+GLYPH_FILL = 0.60
 LAT_RATIO = 1.06  # Baskerville's x-height runs small beside a Ming face
 
 # The border used to sit at x=0.5 with a 1px stroke, so its outer half landed
@@ -167,12 +176,23 @@ def render(s, x, y, fill):
     return f'<path d="{" ".join(d)}" fill="{fill}"/>'
 
 
+def glyph_fit(d):
+    """Scale and centre a full-bleed mark inside the plate, on its real bounds."""
+    bp = BoundsPen(None)
+    parse_path(d, bp)
+    x0, y0, x1, y1 = bp.bounds
+    s = ICON_VB * GLYPH_FILL / max(x1 - x0, y1 - y0)
+    c = ICON_VB / 2
+    return (f'translate({c - (x0 + x1) / 2 * s:.3f} {c - (y0 + y1) / 2 * s:.3f}) '
+            f'scale({s:.4f})')
+
+
 def mark(slug, kind, brand):
     """A brand plate with a white mark on it, whichever shape the slug ships."""
     d = icon_path(slug)
     if kind == "glyph":
         return (f'<rect width="{ICON_VB}" height="{ICON_VB}" rx="{PLATE_RX}" fill="{brand}"/>'
-                f'<path d="{d}" fill="{MARK}"/>')
+                f'<g transform="{glyph_fit(d)}"><path d="{d}" fill="{MARK}"/></g>')
     # knockout: the white backing is inset so it cannot fringe past the plate's
     # own rounded corners
     return (f'<rect x="1.5" y="1.5" width="{ICON_VB - 3}" height="{ICON_VB - 3}" '
