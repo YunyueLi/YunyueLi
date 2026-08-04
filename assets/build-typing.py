@@ -43,11 +43,13 @@ CARET_W = 2
 # Each line wears the colour of what it names: the role takes ungetsu.net's own
 # accent, then miHoYo blue, Call of Duty orange, League of Legends gold. Two
 # values per line so each one holds up on its own GitHub canvas.
+# The verb belongs in the line: "@" flattened shipping Genshin Impact,
+# working on Call of Duty and interning on League of Legends into one claim.
 LINES = [
-    ("AI Product Manager",             "#B13A25", "#CF5F45"),
-    ("Genshin Impact @ miHoYo",        "#1455B4", "#5A9BFF"),
-    ("Call of Duty @ Tencent TiMi",    "#B4661A", "#E8912A"),
-    ("League of Legends @ Riot Games", "#9A7B2E", "#C8AA6E"),
+    ("AI Product Manager",                          "#B13A25", "#CF5F45"),
+    ("Shipped Genshin Impact at miHoYo",            "#1455B4", "#5A9BFF"),
+    ("Worked on Call of Duty at Tencent TiMi",      "#B4661A", "#E8912A"),
+    ("Interned on League of Legends at Riot Games", "#9A7B2E", "#C8AA6E"),
 ]
 
 
@@ -117,6 +119,8 @@ def build(theme):
     for i, (line, (start, ty, er)) in enumerate(zip(LINES, slots)):
         text, colour = line[0], line[col]
         w = face.width(text, SIZE)
+        if w > W - 24:
+            raise SystemExit(f"{text!r} is {w:.0f}px, too wide for a {W}px canvas")
         x = (W - w) / 2
         a, b = start / total, (start + ty) / total
         c, d = (start + ty + HOLD) / total, (start + ty + HOLD + er) / total

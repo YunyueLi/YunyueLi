@@ -6,13 +6,13 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/typing-dark.svg">
-    <img src="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/typing-light.svg" alt="AI Product Manager; Genshin Impact at miHoYo; Call of Duty at Tencent TiMi; League of Legends at Riot Games" width="760"/>
+    <img src="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/typing-light.svg" alt="AI Product Manager; shipped Genshin Impact at miHoYo; worked on Call of Duty at Tencent TiMi; interned on League of Legends at Riot Games" width="760"/>
   </picture>
 </p>
 
-AI Product Manager with roots in game design. Previously shipped *Genshin Impact* @ miHoYo, worked on *Call of Duty* @ Tencent TiMi Studio, and interned on *League of Legends* @ Riot Games. Educated at Shandong University (Japanese & Finance) before MSc Economics @ NTU Singapore.
+Studied Japanese and Finance at Shandong University before an MSc in Economics at NTU Singapore.
 
-Off-screen, landscape photography is the long-term side practice.
+Landscape photography is the long-term side practice.
 
 ### Find me elsewhere
 
