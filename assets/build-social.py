@@ -17,7 +17,9 @@ Here CJK is Songti SC and Latin is Baskerville, both outlined to paths, so the
 row is identical everywhere and loads nothing.
 
 Each chip carries its platform's own mark, vendored under icons/ from
-simple-icons; see icons/SOURCE.md. Brand colour is confined to that 14px glyph,
+simple-icons; see icons/SOURCE.md. Every mark is composed the way the real logo
+reads, a white symbol on a brand-coloured plate, which also keeps the knockout
+marks from going black on a dark canvas. Colour is confined to that 14px plate,
 because the typing animation above already spends the page's colour budget.
 
 Requires fonttools.
@@ -32,12 +34,17 @@ from fontTools.ttLib import TTCollection
 HERE = os.path.dirname(os.path.abspath(__file__))
 SUP = "/System/Library/Fonts/Supplemental"
 
-# platform key, display name, handle, brand colour on light, on dark, icon slug
+# platform key, display name, handle, brand colour on light, on dark, icon slug,
+# and how that slug is built. simple-icons ships two shapes of mark:
+#   "glyph"    the letterforms alone, so the brand plate has to be drawn here
+#   "knockout" the plate with the mark punched out of it, so a white backing has
+#              to go behind it or the hole shows the page through, which on a
+#              dark canvas turns LinkedIn's "in" and Zhihu's 知 black
 PLATFORMS = [
-    ("xhs",      "小红书",      "雲月Ungetsu", "#FF2442", "#FF4D63", "xiaohongshu"),
-    ("wechat",   "微信公众号",  "倦默轩",      "#07C160", "#3DD98A", "wechat"),
-    ("linkedin", "LinkedIn",   "ungetsu",     "#0A66C2", "#4C9BE8", "linkedin"),
-    ("zhihu",    "知乎",        "三不开居士",   "#0084FF", "#3DA5FF", "zhihu"),
+    ("xhs",      "小红书",      "雲月Ungetsu", "#FF2442", "#FF4D63", "xiaohongshu", "glyph"),
+    ("wechat",   "微信公众号",  "倦默轩",      "#07C160", "#3DD98A", "wechat",      "glyph"),
+    ("linkedin", "LinkedIn",   "ungetsu",     "#0A66C2", "#4C9BE8", "linkedin",    "knockout"),
+    ("zhihu",    "知乎",        "三不开居士",   "#0084FF", "#3DA5FF", "zhihu",       "knockout"),
 ]
 
 THEMES = {
@@ -48,6 +55,8 @@ THEMES = {
 SIZE, H, BASE = 13.5, 26, 18
 GAP = 7          # between name and handle
 PAD, ICON, ICON_VB = 11, 14, 24    # icons are single paths on a 24x24 box
+PLATE_RX = 5                       # corner radius of the brand plate, in icon units
+MARK = "#FFFFFF"                   # every mark sits white on its own plate
 LAT_RATIO = 1.06  # Baskerville's x-height runs small beside a Ming face
 
 # Everything stays at Regular. Baskerville SemiBold beside Songti Bold reads
@@ -141,7 +150,20 @@ def render(s, x, y, fill):
     return f'<path d="{" ".join(d)}" fill="{fill}"/>'
 
 
-def build(key, name, handle, brand, theme, slug):
+def mark(slug, kind, brand):
+    """A brand plate with a white mark on it, whichever shape the slug ships."""
+    d = icon_path(slug)
+    if kind == "glyph":
+        return (f'<rect width="{ICON_VB}" height="{ICON_VB}" rx="{PLATE_RX}" fill="{brand}"/>'
+                f'<path d="{d}" fill="{MARK}"/>')
+    # knockout: the white backing is inset so it cannot fringe past the plate's
+    # own rounded corners
+    return (f'<rect x="1.5" y="1.5" width="{ICON_VB - 3}" height="{ICON_VB - 3}" '
+            f'rx="{PLATE_RX - 1.5}" fill="{MARK}"/>'
+            f'<path d="{d}" fill="{brand}"/>')
+
+
+def build(key, name, handle, brand, theme, slug, kind):
     t = THEMES[theme]
     wn, wh = measure(name), measure(handle)
     x = PAD + ICON + 7
@@ -151,7 +173,7 @@ def build(key, name, handle, brand, theme, slug):
     body = (f'<rect x="0.5" y="0.5" width="{w - 1:.1f}" height="{H - 1}" rx="4" '
             f'fill="none" stroke="{t["rule"]}"/>'
             f'<g transform="translate({PAD} {iy:g}) scale({k:.5f})">'
-            f'<path d="{icon_path(slug)}" fill="{brand}"/></g>'
+            f'{mark(slug, kind, brand)}</g>'
             + render(name, x, BASE, t["ink"])
             + render(handle, x + wn + GAP, BASE, t["muted"]))
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w:.0f}" height="{H}" '
@@ -165,7 +187,7 @@ def build(key, name, handle, brand, theme, slug):
 
 if __name__ == "__main__":
     for theme in THEMES:
-        for key, name, handle, c_light, c_dark, slug in PLATFORMS:
+        for key, name, handle, c_light, c_dark, slug, kind in PLATFORMS:
             brand = c_dark if theme == "dark" else c_light
-            fn, w, size = build(key, name, handle, brand, theme, slug)
+            fn, w, size = build(key, name, handle, brand, theme, slug, kind)
             print(f"{fn:28s} {w:3d}x{H}  {size // 1024 or 1}KB")
