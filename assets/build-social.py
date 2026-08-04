@@ -60,13 +60,21 @@ THEMES = {
     "light": dict(ink="#1C1C1C", muted="#777570", rule="#D8D3C8"),
 }
 
-SIZE = 13.5
-BOX_H = 26       # the visible chip
+# A 14px plate left the marks unreadable once they were inset: 60% of 14 is
+# 8.4px, and Xiaohongshu's three-character wordmark had under 3px per character.
+# The plate is now 20px, the same as a GitHub inline avatar, in a 30px chip,
+# which still reads as a control rather than a banner. Everything else is
+# derived from BOX_H so the proportions survive a change of scale.
+BOX_H = 30                         # the visible chip
+ICON = 20                          # the brand plate
+SIZE = 15.5                        # name and handle
 GUTTER = 1       # transparent margin outside the border, on all four sides
 H = BOX_H + GUTTER * 2
-BASE = 18 + GUTTER
-GAP = 7          # between name and handle
-PAD, ICON, ICON_VB = 11, 14, 24    # icons are single paths on a 24x24 box
+BASE = round(BOX_H * 0.692) + GUTTER
+PAD = round(BOX_H * 0.42)          # chip edge to plate, and handle to chip edge
+ICON_GAP = round(BOX_H * 0.27)     # plate to name
+GAP = round(SIZE * 0.52)           # name to handle
+ICON_VB = 24                       # icons are single paths on a 24x24 box
 PLATE_RX = 5                       # corner radius of the brand plate, in icon units
 MARK = "#FFFFFF"                   # every mark sits white on its own plate
 # simple-icons draws every mark to fill its whole 24x24 box, with no padding,
@@ -75,7 +83,11 @@ MARK = "#FFFFFF"                   # every mark sits white on its own plate
 # left edge and X's strokes reached all four corners, quartering the plate. The
 # glyph shapes get scaled to this fraction of the plate and centred on their own
 # measured bounds. Knockout marks already carry a correctly proportioned plate.
-GLYPH_FILL = 0.60
+#
+# 0.70 comes from the two marks that ship their own plate, which are the only
+# brand-designed reference available: LinkedIn's "in" spans 71.6% of its plate
+# and Zhihu's 知 52.9%, the latter low only because that glyph is narrow.
+GLYPH_FILL = 0.70
 LAT_RATIO = 1.06  # Baskerville's x-height runs small beside a Ming face
 
 # The border used to sit at x=0.5 with a 1px stroke, so its outer half landed
@@ -203,7 +215,7 @@ def mark(slug, kind, brand):
 def build(key, name, handle, brand, theme, slug, kind):
     t = THEMES[theme]
     wn, wh = measure(name), measure(handle)
-    x = GUTTER + PAD + ICON + 7
+    x = GUTTER + PAD + ICON + ICON_GAP
     W = math.ceil(x + wn + GAP + wh + PAD + GUTTER)
     k = ICON / ICON_VB
     iy = (H - ICON) / 2
