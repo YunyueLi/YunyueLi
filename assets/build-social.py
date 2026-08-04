@@ -60,14 +60,12 @@ THEMES = {
     "light": dict(ink="#1C1C1C", muted="#777570", rule="#D8D3C8"),
 }
 
-# A 14px plate left the marks unreadable once they were inset: 60% of 14 is
-# 8.4px, and Xiaohongshu's three-character wordmark had under 3px per character.
-# The plate is now 20px, the same as a GitHub inline avatar, in a 30px chip,
-# which still reads as a control rather than a banner. Everything else is
-# derived from BOX_H so the proportions survive a change of scale.
-BOX_H = 30                         # the visible chip
-ICON = 20                          # the brand plate
-SIZE = 15.5                        # name and handle
+# Plate and chip are back to the size they were before being scaled up; that
+# size was never the complaint. Everything else is derived from BOX_H so the
+# proportions survive a change of scale.
+BOX_H = 26                         # the visible chip
+ICON = 14                          # the brand plate
+SIZE = 13.5                        # name and handle
 GUTTER = 1       # transparent margin outside the border, on all four sides
 H = BOX_H + GUTTER * 2
 BASE = round(BOX_H * 0.692) + GUTTER
@@ -84,10 +82,12 @@ MARK = "#FFFFFF"                   # every mark sits white on its own plate
 # glyph shapes get scaled to this fraction of the plate and centred on their own
 # measured bounds. Knockout marks already carry a correctly proportioned plate.
 #
-# 0.70 comes from the two marks that ship their own plate, which are the only
-# brand-designed reference available: LinkedIn's "in" spans 71.6% of its plate
-# and Zhihu's 知 52.9%, the latter low only because that glyph is narrow.
-GLYPH_FILL = 0.70
+# 0.80 is close to the geometric ceiling rather than a guess. The plate has a
+# corner radius of 5 in 24, so a centred square's corner leaves the rounded
+# corner once its half-diagonal offset passes the arc: at 0.86 the corner sits
+# exactly on it, at 0.90 it is outside. 0.80 keeps a visible margin, and real
+# glyph ink almost never reaches its own bounding box corners anyway.
+GLYPH_FILL = 0.80
 LAT_RATIO = 1.06  # Baskerville's x-height runs small beside a Ming face
 
 # The border used to sit at x=0.5 with a 1px stroke, so its outer half landed
@@ -188,28 +188,38 @@ def render(s, x, y, fill):
     return f'<path d="{" ".join(d)}" fill="{fill}"/>'
 
 
-def glyph_fit(d):
-    """Scale and centre a full-bleed mark inside the plate, on its real bounds."""
+def _bounds(d):
     bp = BoundsPen(None)
     parse_path(d, bp)
-    x0, y0, x1, y1 = bp.bounds
-    s = ICON_VB * GLYPH_FILL / max(x1 - x0, y1 - y0)
-    c = ICON_VB / 2
-    return (f'translate({c - (x0 + x1) / 2 * s:.3f} {c - (y0 + y1) / 2 * s:.3f}) '
-            f'scale({s:.4f})')
+    return bp.bounds
 
 
 def mark(slug, kind, brand):
-    """A brand plate with a white mark on it, whichever shape the slug ships."""
+    """A brand plate with a white mark on it, whichever shape the slug ships.
+
+    A knockout slug is already a finished icon: the brand's own plate with the
+    mark punched out of it, at the brand's own proportions. It is left alone,
+    apart from a white backing so the hole does not show the page through and
+    turn the mark black on a dark canvas. Stripping the plate to re-normalise
+    those two against the other three was tried and abandoned: Zhihu keeps the
+    plate and the left half of 知 in one subpath, so dropping the plate by area
+    took half the character with it.
+
+    A glyph slug is bare letterforms drawn to fill the whole box, so it needs a
+    plate drawn here and an inset to keep clear of the rounded corners.
+    """
     d = icon_path(slug)
-    if kind == "glyph":
-        return (f'<rect width="{ICON_VB}" height="{ICON_VB}" rx="{PLATE_RX}" fill="{brand}"/>'
-                f'<g transform="{glyph_fit(d)}"><path d="{d}" fill="{MARK}"/></g>')
-    # knockout: the white backing is inset so it cannot fringe past the plate's
-    # own rounded corners
-    return (f'<rect x="1.5" y="1.5" width="{ICON_VB - 3}" height="{ICON_VB - 3}" '
-            f'rx="{PLATE_RX - 1.5}" fill="{MARK}"/>'
-            f'<path d="{d}" fill="{brand}"/>')
+    if kind == "knockout":
+        return (f'<rect x="1.5" y="1.5" width="{ICON_VB - 3}" height="{ICON_VB - 3}" '
+                f'rx="{PLATE_RX - 1.5}" fill="{MARK}"/>'
+                f'<path d="{d}" fill="{brand}"/>')
+    x0, y0, x1, y1 = _bounds(d)
+    s = ICON_VB * GLYPH_FILL / max(x1 - x0, y1 - y0)
+    c = ICON_VB / 2
+    fit = (f'translate({c - (x0 + x1) / 2 * s:.3f} {c - (y0 + y1) / 2 * s:.3f}) '
+           f'scale({s:.4f})')
+    return (f'<rect width="{ICON_VB}" height="{ICON_VB}" rx="{PLATE_RX}" fill="{brand}"/>'
+            f'<g transform="{fit}"><path d="{d}" fill="{MARK}"/></g>')
 
 
 def build(key, name, handle, brand, theme, slug, kind):
