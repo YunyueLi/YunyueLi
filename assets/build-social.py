@@ -24,6 +24,7 @@ because the typing animation above already spends the page's colour budget.
 
 Requires fonttools.
 """
+import math
 import os
 import re
 from fontTools.misc.transform import Transform
@@ -52,12 +53,23 @@ THEMES = {
     "light": dict(ink="#1C1C1C", muted="#777570", rule="#D8D3C8"),
 }
 
-SIZE, H, BASE = 13.5, 26, 18
+SIZE = 13.5
+BOX_H = 26       # the visible chip
+GUTTER = 1       # transparent margin outside the border, on all four sides
+H = BOX_H + GUTTER * 2
+BASE = 18 + GUTTER
 GAP = 7          # between name and handle
 PAD, ICON, ICON_VB = 11, 14, 24    # icons are single paths on a 24x24 box
 PLATE_RX = 5                       # corner radius of the brand plate, in icon units
 MARK = "#FFFFFF"                   # every mark sits white on its own plate
 LAT_RATIO = 1.06  # Baskerville's x-height runs small beside a Ming face
+
+# The border used to sit at x=0.5 with a 1px stroke, so its outer half landed
+# exactly on the canvas boundary and browsers dropped it under fractional
+# scaling. Worse, the canvas width was rounded to an integer while the border
+# was placed from the unrounded float, so the right edge fell in a different
+# spot on every chip. Width is rounded up first now, and everything is laid out
+# inside that integer with GUTTER to spare.
 
 # Everything stays at Regular. Baskerville SemiBold beside Songti Bold reads
 # heavier than the Ming face at the same nominal weight, because the Didone has
@@ -166,23 +178,25 @@ def mark(slug, kind, brand):
 def build(key, name, handle, brand, theme, slug, kind):
     t = THEMES[theme]
     wn, wh = measure(name), measure(handle)
-    x = PAD + ICON + 7
-    w = x + wn + GAP + wh + PAD
+    x = GUTTER + PAD + ICON + 7
+    W = math.ceil(x + wn + GAP + wh + PAD + GUTTER)
     k = ICON / ICON_VB
     iy = (H - ICON) / 2
-    body = (f'<rect x="0.5" y="0.5" width="{w - 1:.1f}" height="{H - 1}" rx="4" '
-            f'fill="none" stroke="{t["rule"]}"/>'
-            f'<g transform="translate({PAD} {iy:g}) scale({k:.5f})">'
+    # border box: inset by GUTTER, then a further 0.5 so the 1px stroke lands
+    # wholly inside instead of straddling the boundary
+    body = (f'<rect x="{GUTTER + 0.5}" y="{GUTTER + 0.5}" width="{W - GUTTER * 2 - 1}" '
+            f'height="{H - GUTTER * 2 - 1}" rx="4" fill="none" stroke="{t["rule"]}"/>'
+            f'<g transform="translate({GUTTER + PAD} {iy:g}) scale({k:.5f})">'
             f'{mark(slug, kind, brand)}</g>'
             + render(name, x, BASE, t["ink"])
             + render(handle, x + wn + GAP, BASE, t["muted"]))
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w:.0f}" height="{H}" '
-           f'viewBox="0 0 {w:.0f} {H}" role="img" aria-label="{name} {handle}">'
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
+           f'viewBox="0 0 {W} {H}" role="img" aria-label="{name} {handle}">'
            f'{body}</svg>\n')
     out = os.path.join(HERE, f"social-{key}-{theme}.svg")
     with open(out, "w") as fh:
         fh.write(svg)
-    return os.path.basename(out), int(w), os.path.getsize(out)
+    return os.path.basename(out), W, os.path.getsize(out)
 
 
 if __name__ == "__main__":
