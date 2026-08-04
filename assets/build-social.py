@@ -16,12 +16,14 @@ up with the Ming face on the banner or the Baskerville in the typing line.
 Here CJK is Songti SC and Latin is Baskerville, both outlined to paths, so the
 row is identical everywhere and loads nothing.
 
-Brand colour is deliberately reduced to a 3.2px dot. The typing animation
-above already spends the page's colour budget; this row is meant to sit down.
+Each chip carries its platform's own mark, vendored under icons/ from
+simple-icons; see icons/SOURCE.md. Brand colour is confined to that 14px glyph,
+because the typing animation above already spends the page's colour budget.
 
 Requires fonttools.
 """
 import os
+import re
 from fontTools.misc.transform import Transform
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
@@ -30,12 +32,12 @@ from fontTools.ttLib import TTCollection
 HERE = os.path.dirname(os.path.abspath(__file__))
 SUP = "/System/Library/Fonts/Supplemental"
 
-# platform key, display name, handle, brand colour on light, on dark
+# platform key, display name, handle, brand colour on light, on dark, icon slug
 PLATFORMS = [
-    ("xhs",      "小红书",      "雲月Ungetsu", "#FF2442", "#FF4D63"),
-    ("wechat",   "微信公众号",  "倦默轩",      "#07C160", "#3DD98A"),
-    ("linkedin", "LinkedIn",   "ungetsu",     "#0A66C2", "#4C9BE8"),
-    ("zhihu",    "知乎",        "三不开居士",   "#0084FF", "#3DA5FF"),
+    ("xhs",      "小红书",      "雲月Ungetsu", "#FF2442", "#FF4D63", "xiaohongshu"),
+    ("wechat",   "微信公众号",  "倦默轩",      "#07C160", "#3DD98A", "wechat"),
+    ("linkedin", "LinkedIn",   "ungetsu",     "#0A66C2", "#4C9BE8", "linkedin"),
+    ("zhihu",    "知乎",        "三不开居士",   "#0084FF", "#3DA5FF", "zhihu"),
 ]
 
 THEMES = {
@@ -45,7 +47,7 @@ THEMES = {
 
 SIZE, H, BASE = 13.5, 26, 18
 GAP = 7          # between name and handle
-PAD, DOT = 11, 3.2
+PAD, ICON, ICON_VB = 11, 14, 24    # icons are single paths on a 24x24 box
 LAT_RATIO = 1.06  # Baskerville's x-height runs small beside a Ming face
 
 # Everything stays at Regular. Baskerville SemiBold beside Songti Bold reads
@@ -96,6 +98,15 @@ class Face:
         return pen.getCommands()
 
 
+def icon_path(slug):
+    """The single `d` from a vendored simple-icons mark."""
+    raw = open(os.path.join(HERE, "icons", f"{slug}.svg"), encoding="utf-8").read()
+    m = re.search(r'<path[^>]*\sd="([^"]+)"', raw)
+    if not m:
+        raise SystemExit(f"no path found in icons/{slug}.svg")
+    return m.group(1)
+
+
 HAN = Face(f"{SUP}/Songti.ttc", "Songti SC Regular")
 LAT = Face(f"{SUP}/Baskerville.ttc", "Baskerville")
 
@@ -130,14 +141,17 @@ def render(s, x, y, fill):
     return f'<path d="{" ".join(d)}" fill="{fill}"/>'
 
 
-def build(key, name, handle, brand, theme):
+def build(key, name, handle, brand, theme, slug):
     t = THEMES[theme]
     wn, wh = measure(name), measure(handle)
-    x = PAD + DOT * 2 + 6
+    x = PAD + ICON + 7
     w = x + wn + GAP + wh + PAD
+    k = ICON / ICON_VB
+    iy = (H - ICON) / 2
     body = (f'<rect x="0.5" y="0.5" width="{w - 1:.1f}" height="{H - 1}" rx="4" '
             f'fill="none" stroke="{t["rule"]}"/>'
-            f'<circle cx="{PAD + DOT:.1f}" cy="{H / 2}" r="{DOT}" fill="{brand}"/>'
+            f'<g transform="translate({PAD} {iy:g}) scale({k:.5f})">'
+            f'<path d="{icon_path(slug)}" fill="{brand}"/></g>'
             + render(name, x, BASE, t["ink"])
             + render(handle, x + wn + GAP, BASE, t["muted"]))
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w:.0f}" height="{H}" '
@@ -151,7 +165,7 @@ def build(key, name, handle, brand, theme):
 
 if __name__ == "__main__":
     for theme in THEMES:
-        for key, name, handle, c_light, c_dark in PLATFORMS:
+        for key, name, handle, c_light, c_dark, slug in PLATFORMS:
             brand = c_dark if theme == "dark" else c_light
-            fn, w, size = build(key, name, handle, brand, theme)
+            fn, w, size = build(key, name, handle, brand, theme, slug)
             print(f"{fn:28s} {w:3d}x{H}  {size // 1024 or 1}KB")
