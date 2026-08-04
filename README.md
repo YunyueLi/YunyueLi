@@ -6,7 +6,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/typing-dark.svg">
-    <img src="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/typing-light.svg" alt="AI Product Manager; shipped Genshin Impact at miHoYo; worked on Call of Duty at Tencent TiMi; interned on League of Legends at Riot Games" width="760"/>
+    <img src="https://raw.githubusercontent.com/YunyueLi/YunyueLi/main/assets/typing-light.svg" alt="AI Product Manager; Genshin Impact at miHoYo; Call of Duty at Tencent TiMi; League of Legends at Riot Games" width="760"/>
   </picture>
 </p>
 
