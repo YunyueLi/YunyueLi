@@ -5,7 +5,13 @@
     python3 assets/build-centrelines.py     # only when the wordmark changes
     python3 assets/build-banner-anim.py
 
-Writes banner-anim-<theme>.svg, two files, photo embedded.
+Writes banner-write-<theme>.svg, two files, photo embedded.
+
+The name carries the animation, so changing the animation has to change
+the name. A browser holds a cached SVG image document for as long as the
+response allows and reuses it on an ordinary refresh, so republishing
+different behaviour under the same URL leaves everyone watching the old
+one until their cache turns over.
 
 Only the wordmark animates. 雲月 stays exactly as it is, set in Songti TC Bold,
 because that is not what was asked for and Make Me A Hanzi's stroke-order data
@@ -88,9 +94,16 @@ SAMPLES = 40              # points per stroke used to sample the velocity curve
 # timeline never ends, so a reused document is simply mid-cycle and the next
 # write is at most one cycle away. The clearing happens while the ink is already
 # faded out, so nothing is ever seen un-writing itself.
-CYCLE = 16.0              # seconds end to end; the longest anyone waits to see it
-STILL = 11.0              # written and still
-FADE_OUT = 1.0            # the ink goes
+# Length is a compromise, not a preference. A reused document is at an arbitrary
+# point in its cycle when the page comes back, so the chance of catching the
+# writing is however much of the cycle is spent writing: at 16s with 11s of
+# standing still that was under a fifth, and refreshing mostly showed a banner
+# that appeared not to move at all. At 11s a third of the cycle has something
+# happening and the average wait is 5.5s, which is short enough to read as alive
+# without the signature redrawing itself every few seconds.
+CYCLE = 11.0              # seconds end to end; the longest anyone waits to see it
+STILL = 6.2               # written and still
+FADE_OUT = 0.9            # the ink goes
 RESET = 0.6               # the mask winds back, invisibly, inside the blank
 LEAD = 0.05               # so even the first stroke has a moment of being hidden
 
@@ -446,7 +459,7 @@ def build(theme):
 </g>
 </svg>
 '''
-    out = os.path.join(HERE, f"banner-anim-{theme}.svg")
+    out = os.path.join(HERE, f"banner-write-{theme}.svg")
     open(out, "w").write(svg)
     return out, W, H, end, len(svg)
 
