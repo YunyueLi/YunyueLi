@@ -75,11 +75,44 @@ FEATHER_STEP = 5          # crop units between layers
 FEATHER_OPACITY = (0.45, 1.0)
 SEC_PER_100PX = 0.34      # pen speed along the centreline, at full tilt
 GAP_BETWEEN = 0.05        # pen lifts between the three pen-downs
-HOLD_AFTER = 0.5          # beat before the whole thing settles
 TIP_R = 11                # nib highlight radius, in mask-bitmap units
 TIP_FADE = 0.32           # it fades out as the pen leaves the paper
 HOP_LIFT = 26             # how high the nib arcs through the air between them
 SAMPLES = 40              # points per stroke used to sample the velocity curve
+
+# It writes, stands, clears, and writes again. Playing once and freezing was the
+# first shape and it is the better one to look at, but almost nobody ever saw it:
+# a browser keeps the decoded SVG image document in its memory cache along with
+# a timeline that has already run out, so an ordinary refresh shows the finished
+# frame and only a hard reload rewrites. Repeating indefinitely means the
+# timeline never ends, so a reused document is simply mid-cycle and the next
+# write is at most one cycle away. The clearing happens while the ink is already
+# faded out, so nothing is ever seen un-writing itself.
+CYCLE = 16.0              # seconds end to end; the longest anyone waits to see it
+STILL = 11.0              # written and still
+FADE_OUT = 1.0            # the ink goes
+RESET = 0.6               # the mask winds back, invisibly, inside the blank
+LEAD = 0.05               # so even the first stroke has a moment of being hidden
+
+# A round cap sticks out half a stroke width past the end of its dash. Parking
+# the mask at dashoffset = path length puts a dash end exactly on the path's
+# first point, and that cap paints a half disc there: three bright blobs, one
+# per pen-down, sitting on the banner through the whole quiet part of the cycle.
+# It went unnoticed while each stroke was wrapped in a group held at opacity 0
+# until its turn, which the loop had no room for. So the parked position leaves
+# a full stroke width of gap on either side of the path, and the gap is widened
+# to match, which keeps every dash boundary and its caps clear of the ink.
+GAP_PAD = MASK_STROKE
+
+# The photo is embedded, so it is the file. It is a deliberately hazy moon with
+# no fine detail to lose, and at the width GitHub gives a README image it is
+# never seen at more than about 1740 device pixels. Embedding it at 1024 and
+# letting the SVG scale it costs, measured against the uncompressed plate at
+# that display size, an RMSE of 1.7 out of 255 -- and takes the file from 135KB
+# to under half the static JPEG it replaced. Nothing shows until the whole SVG
+# has arrived, so those bytes are the whole wait on a slow line.
+EMBED_W = 1024
+JPEG_Q = 84
 
 # One velocity profile for the whole word, not one per stroke. Easing each
 # stroke separately meant fifteen accelerate-and-brake cycles in five seconds,
@@ -108,9 +141,17 @@ def plate(theme):
     mixed = (ImageChops.screen(ground, ImageOps.invert(art)) if theme == "dark"
              else ImageChops.multiply(ground, art))
     im = Image.blend(ground, mixed, t["blend"])
+    box = im.size
+    if EMBED_W < im.size[0]:
+        im = im.resize((EMBED_W, round(EMBED_W * im.size[1] / im.size[0])), Image.LANCZOS)
     buf = io.BytesIO()
-    im.save(buf, "JPEG", quality=90, optimize=True, progressive=True)
-    return im.size, buf.getvalue()
+    im.save(buf, "JPEG", quality=JPEG_Q, optimize=True, progressive=True)
+    return box, buf.getvalue()
+
+
+def _short(v):
+    """One decimal is finer than a banner pixel and halves the outline bytes."""
+    return f"{v:.1f}".rstrip("0").rstrip(".") or "0"
 
 
 def songti_paths(size_px, right_px, baseline_px):
@@ -127,7 +168,7 @@ def songti_paths(size_px, right_px, baseline_px):
     x = right_px - block
     out = []
     for ch, a in zip(NAME, adv):
-        pen = SVGPathPen(gs)
+        pen = SVGPathPen(gs, ntos=_short)
         gs[cmap[ord(ch)]].draw(TransformPen(pen, Transform(k, 0, 0, -k, x, baseline_px)))
         if (d := pen.getCommands()):
             out.append(d)
@@ -269,68 +310,43 @@ def build(theme):
         for op, step in zip(FEATHER_OPACITY, range(len(FEATHER_OPACITY) - 1, -1, -1)):
             yield op, step * step_px
 
-    def stroke_layers(pts, length, begin, dur, kt, vs_of):
-        """One stroke's mask layers. Interior timing comes from the clock, so
-        there is no per-stroke easing left to brake against."""
-        d = "M " + " L ".join(f"{x} {y}" for x, y in pts)
-        out = []
-        for op, ahead in feather(length):
-            out.append(
-                f'<path d="{d}" fill="none" stroke="#fff" opacity="{op}" '
-                f'stroke-width="{MASK_STROKE}" stroke-linecap="round" '
-                f'stroke-linejoin="round" '
-                # the gap has to be longer than the dash. With both equal to the
-                # path length the pattern wraps to a new dash exactly at the far
-                # end, and a zero-length dash under a round cap paints a dot: a
-                # bright speck sat at the end of the U before anything had been
-                # written. Two units of slack is enough to keep the wrap off the
-                # end of the path.
-                f'stroke-dasharray="{length} {length + 2}" '
-                f'stroke-dashoffset="{length}">'
-                f'<animate attributeName="stroke-dashoffset" begin="{begin:.3f}s" '
-                f'dur="{dur:.3f}s" fill="freeze" calcMode="linear" '
-                f'keyTimes="{kt}" values="{vs_of(ahead)}"/></path>')
-        return d, [f'<g opacity="0"><set attributeName="opacity" to="1" '
-                   f'begin="{begin:.3f}s"/>' + "".join(out) + '</g>']
-
-    def _values(length, ahead, ss):
+    def spans(length, ahead, ss):
         # The lead is earned rather than granted: it ramps in over its own width
         # at the start of the stroke. Handing a layer `ahead` units of head start
         # as its initial attribute meant it was already showing that much ink
         # before its own animation began, which put a faint smudge at the start
         # of the word at t=0 and fully revealed any branch shorter than the lead.
-        return ";".join(f"{length * (1 - s) - min(ahead, s * length):.2f}"
-                        for s in ss)
+        return [length * (1 - s) - min(ahead, s * length) for s in ss]
 
-    def curve(u0, u1, length):
-        """keyTimes and a values-builder that put this stroke on the clock."""
-        t_a, t_b = clock.t(u0), clock.t(u1)
-        span = (t_b - t_a) or 1e-6
+    def curve(u0, u1):
+        """Where along this stroke to sample, and when, in absolute seconds."""
         ss = [j / SAMPLES for j in range(SAMPLES + 1)]
-        kt = [f"{(clock.t(u0 + (u1 - u0) * s) - t_a) / span:.5f}" for s in ss]
-        kt[0], kt[-1] = "0", "1"
-        return (";".join(kt), lambda ahead: _values(length, ahead, ss), t_a, span)
+        return ss, [clock.t(u0 + (u1 - u0) * s) for s in ss]
 
-    layers, nib_pts, nib_t, hops, done = [], [], [], [], 0.0
+    def plan(pts, length, ss, ts):
+        """One stroke's mask layers, as absolute-second keyframes per layer."""
+        d = "M " + " L ".join(f"{x} {y}" for x, y in pts)
+        return [dict(d=d, op=op, length=length, times=list(ts),
+                     values=spans(length, ahead, ss))
+                for op, ahead in feather(length)]
+
+    planned, nib_pts, nib_t, hops, done = [], [], [], [], 0.0
     for i, g in enumerate(groups):
         m = g["main"]
         u0 = done / total
         done += m["len"]
         u1 = done / total
-        lift = i * GAP_BETWEEN
-        kt, vs_of, t_a, dur = curve(u0, u1, m["len"])
-        d, ls = stroke_layers(m["points"], m["len"], t_a + lift, dur, kt, vs_of)
-        layers += ls
+        lift = LEAD + i * GAP_BETWEEN
+        ss, ts = curve(u0, u1)
+        planned += plan(m["points"], m["len"], ss, [t + lift for t in ts])
 
         for b in g["branches"]:
             u_at = u0 + (u1 - u0) * b["at"]
             # a flourish is drawn at the pace the pen is going when it gets there
             bd = max(0.10, b["len"] / 100.0 * SEC_PER_100PX / _speed(u_at))
             bss = [j / 4 for j in range(5)]
-            layers += stroke_layers(
-                b["points"], b["len"], clock.t(u_at) + lift, bd,
-                ";".join(f"{s:.2f}" for s in bss),
-                lambda ahead, L=b["len"]: _values(L, ahead, bss))[1]
+            b0 = clock.t(u_at) + lift
+            planned += plan(b["points"], b["len"], bss, [b0 + s * bd for s in bss])
 
         # the nib rides every main line and arcs across the lifts between them
         _, at = walk([tuple(p) for p in m["points"]])
@@ -340,43 +356,78 @@ def build(theme):
             for j, p in enumerate(hop):
                 nib_pts.append(p)
                 nib_t.append(nib_t[-1] + GAP_BETWEEN / len(hop))
-        for j in range(SAMPLES + 1):
-            s = j / SAMPLES
+        for j, s in enumerate(ss):
             if i and j == 0:
                 continue          # the hop already landed on this point
             nib_pts.append(at(s))
-            nib_t.append(clock.t(u0 + (u1 - u0) * s) + lift)
+            nib_t.append(ts[j] + lift)
 
     draw_end = nib_t[-1]
+    fade_a = draw_end + STILL
+    fade_b = fade_a + FADE_OUT
+    reset_b = fade_b + RESET
+    if reset_b > CYCLE - 0.2:
+        raise SystemExit(f"cycle {CYCLE}s too short for {reset_b:.2f}s of timeline")
+
+    def cyclic(times, values, dec=4):
+        """Absolute-second keyframes as one indefinitely repeating cycle."""
+        if times[0] > 1e-6:
+            times, values = [0.0] + times, [values[0]] + values
+        kt = [f"{t / CYCLE:.{dec}f}" for t in times]
+        kt[0], kt[-1] = "0", "1"
+        return ";".join(kt), ";".join(_short(v) for v in values)
+
+    layers = []
+    for p in planned:
+        park = p["length"] + GAP_PAD          # hidden, with the caps clear of the ink
+        # held parked until just before its turn, then written, then held written,
+        # then wound back -- which happens after the ink has already faded out, so
+        # it is never seen un-writing itself
+        kt, vs = cyclic([0.0, p["times"][0] - 0.02] + p["times"] + [fade_b, reset_b, CYCLE],
+                        [park, park] + p["values"] + [p["values"][-1], park, park])
+        layers.append(
+            f'<path d="{p["d"]}" fill="none" stroke="#fff" opacity="{p["op"]}" '
+            f'stroke-width="{MASK_STROKE}" stroke-linecap="round" '
+            f'stroke-linejoin="round" '
+            f'stroke-dasharray="{p["length"]} {p["length"] + GAP_PAD * 2}" '
+            f'stroke-dashoffset="{park}">'
+            f'<animate attributeName="stroke-dashoffset" begin="0s" '
+            f'dur="{CYCLE}s" repeatCount="indefinite" calcMode="linear" '
+            f'keyTimes="{kt}" values="{vs}"/></path>')
+
     ncum, acc = [0.0], 0.0
     for j in range(len(nib_pts) - 1):
         (x0, y0), (x1, y1) = nib_pts[j], nib_pts[j + 1]
         acc += ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
         ncum.append(acc)
-    nib_d = "M " + " L ".join(f"{x:.2f} {y:.2f}" for x, y in nib_pts)
-    nkt = ";".join(f"{t / draw_end:.5f}" for t in nib_t)
-    nkp = ";".join(f"{c / (acc or 1):.5f}" for c in ncum)
+    nib_d = "M " + " L ".join(f"{_short(x)} {_short(y)}" for x, y in nib_pts)
+    nkt, nkp = cyclic(nib_t + [CYCLE], ncum + [acc])
+    nkp = ";".join(f"{float(v) / (acc or 1):.4f}" for v in nkp.split(";"))
     # dimmed while it is off the paper, so a lift reads as a lift and not as the
     # nib gliding over a blank stretch
-    okt, ovs = ["0", "0.02"], ["0", "1"]
+    ot, ov = [0.0, 0.06], [0.0, 1.0]
     for a, b in hops:
         for tk, v in ((a, 1), (a + (b - a) * 0.25, 0.3),
                       (b - (b - a) * 0.25, 0.3), (b, 1)):
-            okt.append(f"{tk / draw_end:.5f}")
-            ovs.append(f"{v:g}")
-    okt.append("1")
-    ovs.append("1")
+            ot.append(tk)
+            ov.append(v)
+    ot += [draw_end, draw_end + TIP_FADE, CYCLE]
+    ov += [1.0, 0.0, 0.0]
+    okt, ovs = cyclic(ot, ov)
     tips = [f'<circle r="{TIP_R}" fill="url(#nib)" opacity="0">'
-            f'<animate attributeName="opacity" begin="0s" dur="{draw_end:.3f}s" '
-            f'fill="freeze" calcMode="linear" keyTimes="{";".join(okt)}" '
-            f'values="{";".join(ovs)}"/>'
-            f'<animate attributeName="opacity" begin="{draw_end:.3f}s" '
-            f'dur="{TIP_FADE}s" values="1;0" fill="freeze"/>'
-            f'<animateMotion begin="0s" dur="{draw_end:.3f}s" fill="freeze" '
+            f'<animate attributeName="opacity" begin="0s" dur="{CYCLE}s" '
+            f'repeatCount="indefinite" calcMode="linear" keyTimes="{okt}" '
+            f'values="{ovs}"/>'
+            f'<animateMotion begin="0s" dur="{CYCLE}s" repeatCount="indefinite" '
             f'path="{nib_d}" calcMode="linear" keyTimes="{nkt}" '
             f'keyPoints="{nkp}"/></circle>']
 
-    end = draw_end + HOLD_AFTER
+    ikt, ivs = cyclic([0.0, fade_a, fade_b, reset_b, CYCLE], [1.0, 1.0, 0.0, 0.0, 1.0])
+    ink_anim = (f'<animate attributeName="opacity" begin="0s" dur="{CYCLE}s" '
+                f'repeatCount="indefinite" calcMode="linear" keyTimes="{ikt}" '
+                f'values="{ivs}"/>')
+
+    end = CYCLE
     masks = ['<mask id="pen" maskUnits="userSpaceOnUse" '
              f'x="{-MASK_STROKE}" y="{-MASK_STROKE}" width="{cw + MASK_STROKE * 2}" '
              f'height="{ch + MASK_STROKE * 2}">' + "".join(layers) + '</mask>']
@@ -388,7 +439,7 @@ def build(theme):
 <image x="0" y="0" width="{W}" height="{H}" preserveAspectRatio="none" href="data:image/jpeg;base64,{b64}"/>
 <path d="{name_d}" fill="{t["ink"]}"/>
 <g transform="translate({mx:.2f} {my:.2f}) scale({k:.6f})">
-  <g mask="url(#pen)">
+  <g mask="url(#pen)">{ink_anim}
     <g transform="{potrace_tr}"><path d="{outline_d}" fill="{t["ink"]}"/></g>
   </g>
   {"".join(tips)}
