@@ -52,7 +52,7 @@ PLATFORMS = [
     # vanishes into #0d1117, so the dark plate lifts to a neutral charcoal
     # rather than inverting to a light plate, which would make X the only pale
     # chip in the row.
-    ("x",        "X",          "ungetsucaspian", "#000000", "#3F3F46", "x",        "glyph"),
+    ("x",        "X",          "ungetsuli",   "#000000", "#3F3F46", "x",           "glyph"),
 ]
 
 THEMES = {
